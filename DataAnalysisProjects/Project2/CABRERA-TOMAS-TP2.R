@@ -169,11 +169,9 @@ modelo <- glm(`Estrechamiento arterias coronarias` ~ Colesterol, data = data, fa
 summary(modelo)
 
 # Calcular la probabilidad de estrechamiento arterial para un nivel de colesterol igual a 199
-nuevo_data <- data.frame(Colesterol = 199)
+nuevo_data <- data.frame(Colesterol = c(199))
 predicciones <- predict(modelo, newdata = nuevo_data, type = "response")
-probabilidad <- predicciones
-probabilidad
-
+predicciones
 
 ###########
 # PUNTO 2 #
@@ -188,12 +186,25 @@ modelo_multiple <- glm(`Estrechamiento arterias coronarias` ~ ., data = data[, v
 # Resumen del modelo
 summary(modelo_multiple)
 
-
 ###########
 # PUNTO 3 #
 ###########
 
+# Dividir el conjunto de datos en dos grupos: mujeres y varones
+data_mujeres <- subset(data, Sexo == 1)  # 1 representa mujeres
+data_varones <- subset(data, Sexo == 0)  # 0 representa varones
 
+# Ajustar el modelo de regresión logística múltiple para mujeres
+modelo_multiple_mujeres <- glm(`Estrechamiento arterias coronarias` ~ ., data = data_mujeres[, variables_no_categoricas], family = "binomial")
+
+# Resumen del modelo para mujeres
+summary(modelo_multiple_mujeres)
+
+# Ajustar el modelo de regresión logística múltiple para varones
+modelo_multiple_varones <- glm(`Estrechamiento arterias coronarias` ~ ., data = data_varones[, variables_no_categoricas], family = "binomial")
+
+# Resumen del modelo para varones
+summary(modelo_multiple_varones)
 
 #########################################################################################################################################################################
 
