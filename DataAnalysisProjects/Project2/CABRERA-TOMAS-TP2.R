@@ -152,6 +152,49 @@ MSE_simplificado
 # Ejercicio 2 #
 ###############
 
+###########
+# PUNTO 1 #
+###########
+
+# Cargar los datos del archivo "Dolor.xlsx"
+data <- (Dolor)
+
+# Eliminar filas con datos no numéricos en la columna "Colesterol"
+data <- data[!is.na(as.numeric(data$Colesterol)), ]
+
+# Ajustar el modelo de regresión logística
+modelo <- glm(`Estrechamiento arterias coronarias` ~ Colesterol, data = data, family = "binomial")
+
+# Resumen del modelo
+summary(modelo)
+
+# Calcular la probabilidad de estrechamiento arterial para un nivel de colesterol igual a 199
+nuevo_data <- data.frame(Colesterol = 199)
+predicciones <- predict(modelo, newdata = nuevo_data, type = "response")
+probabilidad <- predicciones
+probabilidad
+
+
+###########
+# PUNTO 2 #
+###########
+
+# Identificar las variables no categóricas
+variables_no_categoricas <- sapply(data, is.numeric)
+
+# Ajustar el modelo de regresión logística múltiple
+modelo_multiple <- glm(`Estrechamiento arterias coronarias` ~ ., data = data[, variables_no_categoricas], family = "binomial")
+
+# Resumen del modelo
+summary(modelo_multiple)
+
+
+###########
+# PUNTO 3 #
+###########
+
+
+
 #########################################################################################################################################################################
 
 ###############
