@@ -1,3 +1,19 @@
+#by Tomas Cabrera
+#Antes de empezar, cargar los archivos .xslx de cada uno de los conjuntos de datos analizados.
+#Asegurate de que estos tengan de nombre: "MedidasCorporales", "Dolor" y "Europa"
+
+#Ahora, vamos a instalar y cargar las librerias que vamos a estar utilizando para los analisis
+if (!require(factoextra)) install.packages("factoextra")
+if (!require(forecast)) install.packages("forecast")
+if (!require(stats)) install.packages("stats")
+if (!require(magrittr)) install.packages("magrittr")
+
+# Cargar los paquetes (no hace falta instalarlos si ya los instalaste previamente)
+library(factoextra)
+library(forecast)
+library(stats)
+library(magrittr)
+
 ###############
 # Ejercicio 1 #
 ###############
@@ -169,7 +185,7 @@ modelo <- glm(`Estrechamiento arterias coronarias` ~ Colesterol, data = data, fa
 summary(modelo)
 
 # Calcular la probabilidad de estrechamiento arterial para un nivel de colesterol igual a 199
-nuevo_data <- data.frame(Colesterol = c(199))
+nuevo_data <- data.frame(Colesterol = 199)
 predicciones <- predict(modelo, newdata = nuevo_data, type = "response")
 predicciones
 
@@ -212,6 +228,85 @@ summary(modelo_multiple_varones)
 # Ejercicio 3 #
 ###############
 
+###########
+# PUNTO 1 #
+###########
+
+# Cargamos el conjunto de datos
+europa <- (Europa)
+
+# Verificamos las variables del conjunto de datos
+variables <- names(europa)
+print(variables)
+
+# Contamos el número de variables
+num_variables <- length(variables)
+print(num_variables)
+
+###########
+# PUNTO 2 #
+###########
+#Cargar la libreria magrittr al principio del codigo para que funcione este punto.
+
+# Seleccionamos solo las columnas numéricas
+europa_numeric <- europa[, sapply(europa, is.numeric)]
+
+# Calculamos la matriz de covarianza
+cov_matrix <- cov(europa_numeric)
+
+# Verificamos si la matriz es inversible
+tryCatch({
+  inv_matrix <- solve(cov_matrix)
+  print("La matriz es inversible.")
+}, error = function(e) {
+  print("La matriz no es inversible.")
+})
+
+###########
+# PUNTO 3 #
+###########
+
+# Calculamos los autovalores
+autovalores <- eigen(cov_matrix)$values
+
+# Encontramos el mayor autovalor
+mayor_autovalor <- max(autovalores)
+
+# Imprimimos el mayor autovalor
+print(mayor_autovalor)
+
+###########
+# PUNTO 4 #
+###########
+#Cargar la libreria stats al principio del codigo para que funcione este punto.
+
+# Realizamos el PCA
+pca <- prcomp(europa_numeric, scale. = TRUE)
+
+# Calculamos la varianza explicada por cada componente principal
+varianza_explicada <- pca$sdev^2 / sum(pca$sdev^2)
+
+# Calculamos la varianza acumulada
+varianza_acumulada <- cumsum(varianza_explicada)
+
+# Encontramos la cantidad de componentes necesarios para explicar al menos el 90% de la varianza
+num_componentes <- which(varianza_acumulada >= 0.9)[1]
+
+# Imprimimos la cantidad de componentes
+print(num_componentes)
+
+###########
+# PUNTO 5 #
+###########
+#Cargar la libreria factoextra al principio del codigo para que funcione este punto.
+
+# Realizamos el PCA
+pca <- prcomp(europa_numeric, scale. = TRUE)
+
+# Creamos el gráfico de las contribuciones de las variables
+fviz_contrib(pca, choice = "var", axes = 1, top = 10)
+fviz_contrib(pca, choice = "var", axes = 2, top = 10)
+
 #########################################################################################################################################################################
 
 ###############
@@ -249,11 +344,121 @@ plot(decomp_multiplicativa)
 # PUNTO 3 #
 ###########
 
-###########
-# PUNTO 4 #
-###########
+# Cargar los datos de Johnson & Johnson denuevo.
+data("JohnsonJohnson")
+
+# Realizar la prueba de Box-Cox
+boxcox_result <- boxcox(JohnsonJohnson ~ 1)
+
+# Imprimir los resultados
+print(boxcox_result)
+
+# Graficar el perfil de verosimilitud
+plot(boxcox_result)
+
+
+###############
+# PUNTO 4 & 5 #
+###############
+#Cargar la libreria forecast al principio del codigo para que funcione este punto.
+# Tomar todos los datos excepto los dos últimos años
+datos_entrenamiento <- window(JohnsonJohnson, end = c(1990, 12))
+
+# Realizar un modelo ARIMA automático
+modelo_auto <- auto.arima(datos_entrenamiento)
+
+# Mostrar el modelo ARIMA automático
+print(modelo_auto)
+
+# Especificar los rangos para p y q
+p_range <- 1:6  # Limitando p a 6, ya que ARIMA automático seleccionó p=1
+q_range <- 1:6  # Limitando q a 6
+
+# Inicializar variables para almacenar los resultados del mejor modelo personalizado
+mejor_modelo_personalizado <- NULL
+mejor_aic <- Inf
+
+# Bucle para probar diferentes combinaciones de p y q
+for (p in p_range) {
+  for (q in q_range) {
+    # Crear el modelo ARIMA personalizado
+    modelo_personalizado <- try(arima(datos_entrenamiento, order = c(p, 0, q)))
+    # Evitar errores y modelos no estacionarios
+    if (!inherits(modelo_personalizado, "try-error") &&
+        !any(is.na(coef(modelo_personalizado)))) {
+      # Almacenar el modelo si tiene un AIC más bajo
+      if (AIC(modelo_personalizado) < mejor_aic) {
+        mejor_modelo_personalizado <- modelo_personalizado
+        mejor_aic <- AIC(modelo_personalizado)
+      }
+    }
+  }
+}
+
+# Mostrar el mejor modelo ARIMA personalizado
+print(mejor_modelo_personalizado)
 
 ###########
-# PUNTO 5 #
+# PUNTO 6 #
 ###########
+#Cargar la libreria forecast al principio del codigo para que funcione este punto.
+# Tomar todos los datos excepto los dos últimos años
+datos_entrenamiento <- window(JohnsonJohnson, end = c(1980, 1))
 
+# Realizar un modelo ARIMA automático
+modelo_auto <- auto.arima(datos_entrenamiento)
+
+# Mostrar el modelo ARIMA automático
+print(modelo_auto)
+
+# Predecir con el modelo ARIMA automático para los dos últimos años
+prediccion_auto <- forecast(modelo_auto, h = 8)
+
+# Recortar las predicciones para que coincidan con el número de observaciones en los datos de prueba
+prediccion_auto_mean_recortada <- head(prediccion_auto$mean, length(JohnsonJohnson))
+
+# Calcular el MAPE para el modelo ARIMA automático
+MAPE_auto <- mean(abs((JohnsonJohnson - prediccion_auto_mean_recortada) / JohnsonJohnson)) * 100
+
+# Mostrar el MAPE
+print(MAPE_auto)
+
+# Especificar los rangos para p y q
+p_range <- 1:6  # Limitando p a 6, ya que ARIMA automático seleccionó p=1
+q_range <- 1:6  # Limitando q a 6
+
+# Inicializar variables para almacenar los resultados del mejor modelo personalizado
+mejor_modelo_personalizado <- NULL
+mejor_aic <- Inf
+
+# Bucle para probar diferentes combinaciones de p y q
+for (p in p_range) {
+  for (q in q_range) {
+    # Crear el modelo ARIMA personalizado
+    modelo_personalizado <- try(arima(datos_entrenamiento, order = c(p, 0, q)))
+    # Evitar errores y modelos no estacionarios
+    if (!inherits(modelo_personalizado, "try-error") &&
+        !any(is.na(coef(modelo_personalizado)))) {
+      # Almacenar el modelo si tiene un AIC más bajo
+      if (AIC(modelo_personalizado) < mejor_aic) {
+        mejor_modelo_personalizado <- modelo_personalizado
+        mejor_aic <- AIC(modelo_personalizado)
+      }
+    }
+  }
+}
+
+# Mostrar el mejor modelo ARIMA personalizado
+print(mejor_modelo_personalizado)
+
+# Predecir con el mejor modelo ARIMA personalizado para los dos últimos años
+prediccion_personalizada <- forecast(mejor_modelo_personalizado, h = 8)
+
+# Recortar las predicciones para que coincidan con el número de observaciones en los datos de prueba
+prediccion_personalizada_mean_recortada <- head(prediccion_personalizada$mean, length(JohnsonJohnson))
+
+# Calcular el MAPE para el mejor modelo ARIMA personalizado
+MAPE_personalizado <- mean(abs((JohnsonJohnson - prediccion_personalizada_mean_recortada) / JohnsonJohnson)) * 100
+
+# Mostrar el MAPE
+print(MAPE_personalizado)
