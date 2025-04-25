@@ -1,6 +1,11 @@
 #!/bin/bash
+
+# In the .env file, set the SQL_CONNECTION variable to the connection string for your PostgreSQL salon database.
+source .env
+
+# Salon Scheduler
 #Connect to PostgresSQL
-PSQL="psql "postgresql://postgres:<PASSWORD>@localhost/salon" --tuples-only -c"
+PSQL="$SQL_CONNECTION"
 
 # Script title
 echo -e "\n~~~~~ MY SALON ~~~~~\n"
