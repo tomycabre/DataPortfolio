@@ -40,14 +40,14 @@ NEW_APARTMENT () {
   
   if [[ -z $APARTMENT_NUMBER ]]
   then
-    NEW_APARTMENT "Please, add an appartment number and try again."
+    NEW_APARTMENT "Please, add an appartment number and try again. To exit: Ctrl + Z."
   else
     # Count characters
-    APP_NUM_CHAR_COUNT=$(echo -n $APARTMENT_NUMBER | wc -m)
+    AP_NUM_CHAR_COUNT=$(echo -n $APARTMENT_NUMBER | wc -m)
     # If characters > 5, ERROR
-    if [[ $APP_NUM_CHAR_COUNT > 5 ]]
+    if [[ $AP_NUM_CHAR_COUNT > 5 ]]
     then
-      NEW_APARTMENT "The appartment number must have a maximum of 5 characters."
+      NEW_APARTMENT "The appartment number must have a maximum of 5 characters. To exit: Ctrl + Z."
     else
       NUMBER_OF_ROOMS
     fi
@@ -66,7 +66,7 @@ NUMBER_OF_ROOMS () {
 
   if [[ ! $ROOMS_NUMBER =~ ^[0-9]+$ ]]
   then
-    NUMBER_OF_ROOMS "That is not a valid number."
+    NUMBER_OF_ROOMS "That is not a valid number. To exit: Ctrl + Z."
   else
     APPARTMENT_PRICE
   fi
@@ -84,15 +84,11 @@ APPARTMENT_PRICE () {
 
   if [[ ! $PRICE_PER_DAY =~ ^[0-9]+$ ]]
   then
-    APPARTMENT_PRICE "That is not a valid number."
+    APPARTMENT_PRICE "That is not a valid number. To exit: Ctrl + Z."
   else
     INSERT_NEW_APARTMENT=$($PSQL " INSERT INTO apartments(apartment_number, rooms, price) VALUES ('$APARTMENT_NUMBER', $ROOMS_NUMBER, $PRICE_PER_DAY) ")
     echo -e "\nYour apartment $APARTMENT_NUMBER, with a price of \$$PRICE_PER_DAY per day for $ROOMS_NUMBER rooms has been successfully added to your database."
   fi
-}
-
-EXIT () {
-  echo -e "\nThank you for stopping in.\n"
 }
 
 DELETE_APARTMENT () {
@@ -112,17 +108,17 @@ DELETE_APARTMENT () {
     echo "$APARTMENT_ID) $APARTMENT_NUMBER"
   done
   # Get user choice
-  read APPARTMENT_CHOSEN
+  read APARTMENT_CHOSEN
 
-  if [[ ! $APPARTMENT_CHOSEN =~ ^[0-9]+$ ]]
+  if [[ ! $APARTMENT_CHOSEN =~ ^[0-9]+$ ]]
   then
-    DELETE_APARTMENT "That is not a valid apartment number."
+    DELETE_APARTMENT "That is not a valid apartment number. To exit: Ctrl + Z."
   else
     # Get apartment to delete
-    APPARTMENT_TO_DELETE=$($PSQL " SELECT apartment_number FROM apartments WHERE apartment_id='$APPARTMENT_CHOSEN' ")
-    if [[ -z $APPARTMENT_TO_DELETE ]]
+    APARTMENT_TO_DELETE=$($PSQL " SELECT apartment_number FROM apartments WHERE apartment_id='$APARTMENT_CHOSEN' ")
+    if [[ -z $APARTMENT_TO_DELETE ]]
     then
-      DELETE_APARTMENT "That apartment does not exist."
+      DELETE_APARTMENT "That apartment does not exist. To exit: Ctrl + Z."
     else
       FINISH_DELETING
     fi
@@ -135,20 +131,24 @@ FINISH_DELETING() {
   then
     echo -e "\n$1"
   fi
-  echo -e "\nAre you sure you want to delete apartment$APPARTMENT_TO_DELETE? ( y / n )"
+  echo -e "\nAre you sure you want to delete apartment$APARTMENT_TO_DELETE? ( y / n )"
   read YES_OR_NO
   
   case $YES_OR_NO in
     y) DELETE ;;
     n) EXIT ;;
-    *) FINISH_DELETING "Please write y or n to continue."
+    *) FINISH_DELETING "Please write y or n to continue. To exit: Ctrl + Z."
   esac
 }
 
 DELETE () {
   # Delete selected apartment
-  APPARTMENT_DELETION_PROMPT=$($PSQL " DELETE FROM apartments WHERE apartment_id='$APPARTMENT_CHOSEN' ")
-  echo -e "\nThe apartment$APPARTMENT_TO_DELETE was succesfully deleted."
+  APARTMENT_DELETION_PROMPT=$($PSQL " DELETE FROM apartments WHERE apartment_id='$APARTMENT_CHOSEN' ")
+  echo -e "\nThe apartment$APARTMENT_TO_DELETE was succesfully deleted."
+}
+
+EXIT () {
+  echo -e "\nThank you for stopping in.\n"
 }
 
 MAIN_MENU
