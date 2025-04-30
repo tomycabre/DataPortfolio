@@ -135,7 +135,7 @@ CHECK_OUT () {
 
     echo -e "\n~~~~~~~~~~~~~~~~~\n~~~ Check Out ~~~\n~~~~~~~~~~~~~~~~~"
     # Check if there are apartments pending for Check-Out.
-    GET_UNAVAIL_APARTMENTS=$($PSQL " SELECT apartment_id, apartment_number FROM apartments WHERE available='f' ")
+    GET_UNAVAIL_APARTMENTS=$($PSQL " SELECT apartment_id, apartment_number FROM apartments WHERE available='f' ORDER BY apartment_id ")
     if  [[ -z $GET_UNAVAIL_APARTMENTS ]]
     then
         MAIN_MENU "Sorry, there are no apartments available for Check-Out."
@@ -175,9 +175,26 @@ CHECK_OUT_CONFIRMATION () {
 }
 
 FINISH_CHECK_OUT () {
+    # Get schedule_id
+    SCHEDULE_ID=$($PSQL " SELECT schedule_id FROM schedule WHERE checkout_time IS NULL AND apartment_id=$APARTMENT_CHOSEN ")
     # Get apartment ID
     UPDATE_SCHEDULE_CHECK_OUT_TIME=$($PSQL " UPDATE schedule SET checkout_time= NOW() WHERE apartment_id=$APARTMENT_CHOSEN ")
     UPDATE_AVAILABLILITY=$($PSQL " UPDATE apartments SET available='t' WHERE apartment_id=$APARTMENT_CHOSEN ")
+    
+    # Get Check-in and Check-out dates.
+    CHECK_IN_DATE=$($PSQL " SELECT checkin_time FROM schedule WHERE schedule_id=$SCHEDULE_ID " )
+    CHECK_OUT_DATE=$($PSQL " SELECT checkout_time FROM schedule WHERE schedule_id=$SCHEDULE_ID ")
+    # Get apartment price per night
+    PRICE_PER_DAY=$($PSQL " SELECT price FROM apartments WHERE apartment_id=$APARTMENT_CHOSEN ")
+    # Convert both dates to seconds since epoch
+    D1=$(date -d "$CHECK_IN_DATE" +%s)
+    D2=$(date -d "$CHECK_OUT_DATE" +%s)
+
+    # Calculate the difference in days
+    DAY_DIFFERENCE=$(( (D2 - D1) / 86400 ))
+    PRICE_TO_PAY=$(($PRICE_PER_DAY * $DAY_DIFFERENCE))
+
+    UPDATE_TOTAL_PRICE=$($PSQL " UPDATE schedule SET total=$PRICE_TO_PAY WHERE schedule_id=$SCHEDULE_ID ")
     echo -e "\nYou have successfully checked out apartment$APARTMENT_TO_CHECK_OUT."
 }
 

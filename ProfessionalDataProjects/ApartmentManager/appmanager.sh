@@ -33,23 +33,29 @@ NEW_APARTMENT () {
     echo -e "\n$1"
   fi
   # Function to create a new apartment
-  echo -e "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n~~ Apartment Creation Menu ~~\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n~~ Apartment Creation Menu ~~\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
   echo -e "\nAdd an apartment number. ex: 4C, 403."
   read APARTMENT_NUMBER
-  
   if [[ -z $APARTMENT_NUMBER ]]
   then
     NEW_APARTMENT "Please, add an appartment number and try again. To exit: Ctrl + Z."
   else
-    # Count characters
-    AP_NUM_CHAR_COUNT=$(echo -n $APARTMENT_NUMBER | wc -m)
-    # If characters > 5, ERROR
-    if [[ $AP_NUM_CHAR_COUNT > 5 ]]
+    # Get existing apartments
+    EXISTING_APARTMETNS=$($PSQL " SELECT apartment_number FROM apartments WHERE apartment_number='$APARTMENT_NUMBER' " )
+    if [[ -z $EXISTING_APARTMETNS ]]
     then
-      NEW_APARTMENT "The appartment number must have a maximum of 5 characters. To exit: Ctrl + Z."
+      # Count characters
+      AP_NUM_CHAR_COUNT=$(echo -n $APARTMENT_NUMBER | wc -m)
+      # If characters > 5, ERROR
+      if [[ $AP_NUM_CHAR_COUNT > 5 ]]
+      then
+        NEW_APARTMENT "The appartment number must have a maximum of 5 characters. To exit: Ctrl + Z."
+      else
+        NUMBER_OF_ROOMS
+      fi
     else
-      NUMBER_OF_ROOMS
+      NEW_APARTMENT "The apartment you entered already exists. To exit: Ctrl + Z."
     fi
   fi
 }
@@ -98,7 +104,7 @@ DELETE_APARTMENT () {
     echo -e "\n$1"
   fi
   # Function to delete an apartment
-  echo -e "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n~~ Apartment Deletion Menu ~~\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo -e "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n~~ Apartment Deletion Menu ~~\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   # Get apartments
   GET_APARTMENTS=$($PSQL " SELECT apartment_id, apartment_number FROM apartments; ")
   # Create function to display apartments
